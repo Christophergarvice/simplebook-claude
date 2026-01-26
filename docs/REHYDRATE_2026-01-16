@@ -1,0 +1,57 @@
+SIMPLEBOOK REHYDRATE — 2026-01-16
+
+Status:
+- QFX ingest works. test_qfx_ingest.py loads July24.qfx and prints first 3 tx.
+- SQLite store works. test_sqlite_store.py imports and DB counts match.
+- CLI exists: sb.py
+  - python3 -u sb.py import samples/July24.qfx
+  - python3 -u sb.py report 2025-11
+- report output works and shows Credits/Debits/Net + Top CHECKS/TRANSFERS/OTHER DEBITS.
+- Added diagnostic: in cmd_report(), after txs=list_by_month(...), we print "Detected checks: X".
+  - For 2025-11 it printed: Detected checks: 6
+
+Key discovery:
+- The sample file named “July24.qfx” contains multiple months (including 2025-11). Filename is not truth; posted_date is truth.
+- UCBI statement structure confirmed via jul24.pdf:
+  1) Deposits (ledger list) + deposit slip images (images are evidence, not transactions)
+  2) Other Credits (electronic)
+  3) Checks (ledger list, not images)
+  4) Other Debits (electronic)
+  5) Check images (evidence/enrichment only; needed to get payee)
+
+Design decision:
+- OCR/check image parsing is a Phase 2 “enrichment” module. It must NOT create transactions.
+  It should attach payee metadata to existing check transactions (by checknum/date/amount match).
+
+Next steps (in order):
+1) Add “sb months” command:
+   - SQL: GROUP BY substr(posted_date,1,7) to list available YYYY-MM with counts.
+2) Add DB columns for payee enrichment (non-breaking migration):
+   - payee TEXT
+   - payee_confidence REAL
+   - payee_source TEXT
+   - (optional) evidence_path TEXT or image_id TEXT
+3) Ensure QFX ingest reliably populates checknum and/or type for checks:
+   - inspect one check’s Transaction.raw keys to find CHECKNUM/TRNTYPE mapping
+4) Later: enrichment pipeline reads OCR results and updates payee fields; core reports must work without it.
+
+
+simplebook/                              # project root
+  sb.py                                  # CLI entry (python3 sb.py report YYYY-MM)
+  data/
+    simplebook.db                        # SQLite database (created by imports)
+  samples/
+    July24.qfx                           # sample QFX (contains multiple months)
+  models/
+    transaction.py                       # Transaction dataclass (canonical model)
+  ingest/
+    qfx/
+      qfx_reader.py                      # low-level QFX parsing
+      qfx_ingest.py                      # ingest_qfx(...) -> List[Transaction]
+  ledger/
+    sqlite_store.py                      # SQLiteStore: init_db, upsert, list_by_month, etc.
+  reports/
+    basic_summary.py                     # summarize(...), tx_kind(...), top_spend_by_kind(...)
+  tests/
+    test_qfx_ingest.py                   # loads QFX, prints first few
+    test_sqlite_store.py                 # imports into DB, counts, shows newest, etc.
