@@ -29,28 +29,6 @@ def cmd_import(args: list[str]) -> None:
     print(f"Inserted (new): {inserted}")
     print(f"DB total: {store.count_transactions()}")
 
-
-def cmd_months(args: list[str]) -> None:
-    # Optional: allow "sb months <limit>"
-    limit = 60
-    if len(args) == 1:
-        try:
-            limit = int(args[0])
-        except ValueError:
-            print("Usage: sb months [limit]")
-            sys.exit(1)
-    elif len(args) > 1:
-        print("Usage: sb months [limit]")
-        sys.exit(1)
-
-    store = SQLiteStore(DB_PATH)
-    store.init_db()
-
-    months = store.list_months()
-    if not months:
-        print("No transactions found in DB.")
-        return
-
     print("\nMonths in DB (newest first):")
     for ym, c in months[:limit]:
         print(f"{ym}  ({c})")
