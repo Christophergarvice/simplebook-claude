@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Data files (SENSITIVE!)
+data/
+*.db
+*.sqlite
+
+# Bank statements (SENSITIVE!)
+samples/
+*.qfx
+*.ofx
+*.pdf
+
+# OS
+.DS_Store
+
+# Logs
+*.log
